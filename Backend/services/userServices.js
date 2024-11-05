@@ -1,7 +1,10 @@
+const { log } = require('console');
 const userController = require('../controller/userController');
 
 const register = async (req, res) => {
     const { username, email, password } = req.body;
+     console.log("** Register", req.body);
+     
     try {
       const user = await userService.registerUser(username, email, password);
       res.status(201).json({ message: 'User registered successfully', user });
