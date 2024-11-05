@@ -1,4 +1,3 @@
-const { log } = require('console');
 const userController = require('../controller/userController');
 
 const register = async (req, res) => {
