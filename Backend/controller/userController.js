@@ -4,6 +4,8 @@ const userServices = require('../services/userServices');
 async function registerUser(req,res){
     try {
          const {userName, email , password}= req.body;
+         console.log("User " , req.body);
+         
          if (!userName && !email && !password) {
             return res.status(400).json({msg:"Enter the all User details"});
          }else if (!userName) {
@@ -22,7 +24,11 @@ async function registerUser(req,res){
                 email: email,
                 password:password
             }
+            console.log('User deatails' , user);
+            
             const addData = new User(user);
+            console.log("User data ", addData);
+            
             await addData.save();
             res.status(200).json({msg:"User Added successfully"});
          }
