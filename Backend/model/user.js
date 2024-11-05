@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+const secret  ="Kishan@1156";
+
 // user Schema 
 const userSchema = new mongoose.Schema({
     userName :{
@@ -55,3 +57,26 @@ userSchema.pre('save', async function (next) {
     }
     next();
   });
+
+  userSchema.method.genrateAuthToken= async function(){
+    const user = this;
+    const token = jwt.sign({_id : user. _id.toString()}, secret , {expiresIn : '2h'});
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+    return token;
+  };
+
+  userSchema.methods.isPasswordMatch = async function (enteredPassword) {
+    return bcrypt.compare(enteredPassword, this.password);
+  };
+
+  userSchema.methods.toJSON = function () {
+    const user = this.toObject();
+    delete user.password;
+    delete user.tokens;
+    return user;
+  };
+
+const User = mongoose.model ('User' , userSchema);
+
+module.exports = User;
