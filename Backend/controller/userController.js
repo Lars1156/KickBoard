@@ -1,33 +1,52 @@
 const User = require('../model/user');
-const jsw = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const userServices = require('../services/userServices');
 
-
-const registerUser = async(userName , email , password)=>{
-    const existingUser = await User.findOne({email});
-    if(!existingUser){
-       throw new error('Email is Alredy Register');
+async function registerUser(req,res){
+    try {
+         const {userName, email , password}= req.body;
+         if (!userName && !email && !password) {
+            return res.status(400).json({msg:"Enter the all User details"});
+         }else if (!userName) {
+            return res.status(400).json({msg:'Enter the valid UserName'});
+         }else if(!email){
+            return res.status(400).json({msg:'Enter the Vaild email Name'});
+         }else if(!password){
+            return res.status(400).json({msg:'Enter the Vaild Password'});
+         }else{
+            const existingUser = await User.findOne({email});
+            if(existingUser){
+                return res.status(400).json({ msg: "User with this email already exists" });
+            }
+            const user = {
+                userName:userName,
+                email: email,
+                password:password
+            }
+            const addData = new User(user);
+            await addData.save();
+            res.status(200).json({msg:"User Added successfully"});
+         }
+    } catch (error) {
+        return  res.status(400).json({msg:"User is Not added server"});
     }
-    const user = new User({userName , email , password});
-    await user.save();
-    return user;
 };
-
-const loginUser = async(email , password) =>{
-    const user = await User.findOne({email});
-    if(!user){
-        throw new error('User is allready Existes');
+async function loginUser(req,res){
+    try {
+         const {email , password} =req.body;
+         const checkData = await User.findOne({email , password});
+         if(!checkData){
+            return res.status(401).json({msg:"User does not exist"});
+        }else {
+            const token = setUser(checkData);
+            return res.status(200).json({msg: "Successfully Logged In", data: checkData, token: token});
+        }
+      
+    } catch (error) {
+        return  res.status(400).json({msg:"User is Not added server"});
     }
-
-    const isMatch  = await user.isMatchPassword(password)
-    if(!isMatch){
-        throw new error('Password is invaild ');
-    }
-    const token = await user.generateAuthToken();
-    return { user, token };
 }
 
 module.exports = {
-    registerUser,
+    registerUser ,
     loginUser
 }
