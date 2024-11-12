@@ -1,91 +1,75 @@
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
-const secret  ="Kishan@1156";
-
-// user Schema 
 const userSchema = new mongoose.Schema({
-    userName :{
-        type:String,
+    username: {
+        type: String,
         required: true,
-        trim:true
-    },
-
-    email:{
-        type:String,
-        required:true,
-        trim:true,
-        lowercase: true,
         unique: true,
-        validate:{
-            validator: function(v){
-                return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
-            },
-            message: "Please enter a valid email address",
-        } ,
+        trim: true,
     },
-
-    password:{
-        type:String,
-        required:true,
-        trim:true,
-        minilength:[8, 'Password must be at least 8 characters long'],
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        lowercase: true,
         validate: {
             validator: function (v) {
-              return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/.test(v);
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
             },
-            message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-          },
+            message: props => `${props.value} is not a valid email!`
+        }
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 8,
+        validate: {
+            validator: function (v) {
+                // Ensure the password has at least one uppercase letter, one lowercase letter, one number, and one special character
+                return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
+            },
+            message: 'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, a number, and a special character.'
+        }
     },
     role: {
-      type: String,
-      enum: ['Admin', 'Manager', 'Developer', 'Designer', 'QA', 'Intern'],
-      default: 'Admin',
+        type: String,
+        enum: ['Admin', 'Manager', 'Developer', 'Intern' , 'QA Tester'],
+        default: 'Admin',
     },
-    department: {
-      type: String,
-      enum: ['Development', 'Design', 'Quality Assurance', 'Management'],
-      required: true,
-    },
-    tokens: [
-        {
-          token: {
-            type: String,
-            required: true,
-          },
-        },
-      ],
-    }, {
-      timestamps: true,
+    tasks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Task',
+    }],
+    projects: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project',
+    }],
+    meetings: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Meeting',
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    }
+}, {
+    timestamps: true,
 });
 
+// Pre-save middleware to hash password before saving
 userSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
-      this.password = await bcrypt.hash(this.password, 10);
+    if (this.isModified('password') || this.isNew) {
+        try {
+            const saltRounds = 10;
+            this.password = await bcrypt.hash(this.password, saltRounds);
+            next();
+        } catch (error) {
+            next(error);
+        }
+    } else {
+        next();
     }
-    next();
-  });
+});
 
-  userSchema.method.genrateAuthToken= async function(){
-    const user = this;
-    const token = jwt.sign({_id : user. _id.toString()}, secret , {expiresIn : '2h'});
-    user.tokens = user.tokens.concat({ token });
-    await user.save();
-    return token;
-  };
-
-  userSchema.methods.isPasswordMatch = async function (enteredPassword) {
-    return bcrypt.compare(enteredPassword, this.password);
-  };
-
-  userSchema.methods.toJSON = function () {
-    const user = this.toObject();
-    delete user.password;
-    delete user.tokens;
-    return user;
-  };
-
-const User = mongoose.model ('User' , userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
