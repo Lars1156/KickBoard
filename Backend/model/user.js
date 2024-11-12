@@ -38,7 +38,16 @@ const userSchema = new mongoose.Schema({
             message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
           },
     },
-
+    role: {
+      type: String,
+      enum: ['Admin', 'Manager', 'Developer', 'Designer', 'QA', 'Intern'],
+      default: 'Developer',
+    },
+    department: {
+      type: String,
+      enum: ['Development', 'Design', 'Quality Assurance', 'Management'],
+      required: true,
+    },
     tokens: [
         {
           token: {
