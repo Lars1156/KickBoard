@@ -67,8 +67,7 @@ async function loginUser(req, res) {
         console.error('Error logging in user:', error);
         return res.status(500).json({ msg: "Server error, login failed" });
     }
-}
-const User = require('../model/user');
+};
 
 async function getAllUsers(req, res) {
     try {
